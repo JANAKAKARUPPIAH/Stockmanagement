@@ -1,0 +1,179 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.HashMap;
+
+public class StockManagementSystem {
+    // Core data structure to store stock details
+    private static HashMap<String, StockItem> stockDatabase = new HashMap<>();
+    private static DefaultTableModel tableModel;
+
+    public static void main(String[] args) {
+        // Create main frame
+        JFrame frame = new JFrame("Stock Management System");
+        frame.setSize(800, 500);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+
+        // Table to display stock items
+        String[] columns = {"Item Name", "Quantity", "Price per Unit", "Reorder Level"};
+        tableModel = new DefaultTableModel(columns, 0);
+        JTable stockTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(stockTable);
+
+        // Panel for input fields and buttons
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridLayout(6, 2, 5, 5));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Stock Details"));
+
+        // Input fields
+        JTextField itemNameField = new JTextField();
+        JTextField quantityField = new JTextField();
+        JTextField priceField = new JTextField();
+        JTextField reorderLevelField = new JTextField();
+
+        inputPanel.add(new JLabel("Item Name:"));
+        inputPanel.add(itemNameField);
+        inputPanel.add(new JLabel("Quantity:"));
+        inputPanel.add(quantityField);
+        inputPanel.add(new JLabel("Price per Unit:"));
+        inputPanel.add(priceField);
+        inputPanel.add(new JLabel("Reorder Level:"));
+        inputPanel.add(reorderLevelField);
+
+        // Buttons
+        JButton addButton = new JButton("Add Item");
+        JButton updateButton = new JButton("Update Item");
+        JButton deleteButton = new JButton("Delete Item");
+        JButton lowStockButton = new JButton("Low Stock Alert");
+
+        inputPanel.add(addButton);
+        inputPanel.add(updateButton);
+        inputPanel.add(deleteButton);
+        inputPanel.add(lowStockButton);
+
+        frame.add(scrollPane, BorderLayout.CENTER);
+        frame.add(inputPanel, BorderLayout.SOUTH);
+
+        // Button functionalities
+        addButton.addActionListener(e -> {
+            String itemName = itemNameField.getText().trim();
+            int quantity = Integer.parseInt(quantityField.getText().trim());
+            double price = Double.parseDouble(priceField.getText().trim());
+            int reorderLevel = Integer.parseInt(reorderLevelField.getText().trim());
+
+            if (stockDatabase.containsKey(itemName)) {
+                JOptionPane.showMessageDialog(frame, "Item already exists. Use Update instead.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Add new item
+            StockItem item = new StockItem(itemName, quantity, price, reorderLevel);
+            stockDatabase.put(itemName, item);
+            updateTable();
+            JOptionPane.showMessageDialog(frame, "Item added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        updateButton.addActionListener(e -> {
+            String itemName = itemNameField.getText().trim();
+            if (!stockDatabase.containsKey(itemName)) {
+                JOptionPane.showMessageDialog(frame, "Item not found. Add the item first.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int quantity = Integer.parseInt(quantityField.getText().trim());
+            double price = Double.parseDouble(priceField.getText().trim());
+            int reorderLevel = Integer.parseInt(reorderLevelField.getText().trim());
+
+            // Update existing item
+            StockItem item = stockDatabase.get(itemName);
+            item.setQuantity(quantity);
+            item.setPrice(price);
+            item.setReorderLevel(reorderLevel);
+            updateTable();
+            JOptionPane.showMessageDialog(frame, "Item updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        deleteButton.addActionListener(e -> {
+            String itemName = itemNameField.getText().trim();
+            if (!stockDatabase.containsKey(itemName)) {
+                JOptionPane.showMessageDialog(frame, "Item not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Remove item
+            stockDatabase.remove(itemName);
+            updateTable();
+            JOptionPane.showMessageDialog(frame, "Item deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        lowStockButton.addActionListener(e -> {
+            StringBuilder lowStockItems = new StringBuilder();
+            for (StockItem item : stockDatabase.values()) {
+                if (item.getQuantity() < item.getReorderLevel()) {
+                    lowStockItems.append(item.getName()).append(" (Quantity: ").append(item.getQuantity()).append(")\n");
+                }
+            }
+
+            if (lowStockItems.length() > 0) {
+                JOptionPane.showMessageDialog(frame, "Low Stock Items:\n" + lowStockItems, "Low Stock Alert", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(frame, "All items are sufficiently stocked.", "Low Stock Alert", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        // Display the frame
+        frame.setVisible(true);
+    }
+
+    private static void updateTable() {
+        tableModel.setRowCount(0); // Clear existing rows
+        for (StockItem item : stockDatabase.values()) {
+            tableModel.addRow(new Object[]{item.getName(), item.getQuantity(), item.getPrice(), item.getReorderLevel()});
+        }
+    }
+
+    // StockItem class to represent individual stock items
+    static class StockItem {
+        private String name;
+        private int quantity;
+        private double price;
+        private int reorderLevel;
+
+        public StockItem(String name, int quantity, double price, int reorderLevel) {
+            this.name = name;
+            this.quantity = quantity;
+            this.price = price;
+            this.reorderLevel = reorderLevel;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getQuantity() {
+            return quantity;
+        }
+
+        public double getPrice() {
+            return price;
+        }
+
+        public int getReorderLevel() {
+            return reorderLevel;
+        }
+
+        public void setQuantity(int quantity) {
+            this.quantity = quantity;
+        }
+
+        public void setPrice(double price) {
+            this.price = price;
+        }
+
+        public void setReorderLevel(int reorderLevel) {
+            this.reorderLevel = reorderLevel;
+        }
+    }
+}
